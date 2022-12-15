@@ -1,0 +1,140 @@
+@page "/equipe"
+@using System.IO.Pipes
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using System.Text.Json.Serialization
+@using System.ComponentModel
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<h3>Equipe</h3>
+<button class="btn btn-info" @onclick="() => showForm()">Créer</button>
+
+<table class="table table-dark">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Senior ?</th>
+        <th>Cotisation Base</th>
+        <th>Voir</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (Equipe ekip in _equipes)
+    {
+        <tr>
+            <td>@ekip.id</td>
+            <td>@ekip.nom</td>
+            <td><input type="checkbox" @bind="ekip.isSenior" disabled></td>
+            <td>@ekip.cotisationBase</td>
+            <td><button class="btn btn-info" @onclick="() => move(ekip.id)">Voir</button></td>
+            <td>
+                <button class="btn btn-danger" @onclick="() => delete(ekip.id)">Supprimer</button>
+                <button class="btn btn-warning" @onclick="() => showEditForm(ekip)">Modifier</button>
+            </td>
+        </tr>
+    }            
+    </tbody>  
+</table>
+
+@if (isCreate)
+{
+    <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
+        <div>
+            <label for="nom">Nom</label><br/>
+            <InputText id="nom" @bind-Value="equipeCreate.nom"/>
+        </div>
+        <div>
+            <label for="isSenior">Sénior ?</label><br/>
+            <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
+        </div>
+        <div>
+            <label for="cotisationBase">Cotisation de base ?</label><br/>
+            <InputNumber id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
+        </div>
+        <br/>
+        <button class="btn btn-outline-primary" type="submit">Submit</button>
+    </EditForm>
+}
+
+
+
+@code {
+    Equipe? equipeCreate = new Equipe();
+    private Boolean isCreate;
+    private Boolean isEdit;
+
+    private List<Equipe>? _equipes;
+    protected override async Task OnInitializedAsync() => 
+        _equipes = await Http.GetFromJsonAsync<List<Equipe>>("http://localhost:8000/equipes");
+
+    bool isDisabled = true;
+
+    private async Task delete(int idEquipe)
+    {
+        try
+        {
+            await Http.DeleteAsync("http://localhost:8000/delete-equipe/" + idEquipe);
+            Equipe equipe1 = _equipes.Find(x => x.id == idEquipe);
+            int index = _equipes.IndexOf(equipe1);
+            _equipes.RemoveAt(index);
+        }
+        catch( Exception e)
+        {
+            Console.Write(e);
+            throw;
+        }
+    }
+
+    private void move(int id)
+    {
+        NavManager.NavigateTo($"/ShowOneEquipe/{id}");
+    }
+
+    private void showForm()
+    {
+        isCreate = !isCreate;
+        isEdit = false;
+    }
+    
+    private void showEditForm(Equipe equipe)
+    {
+        Equipe temp = equipeCreate;
+        equipeCreate = equipe;
+
+        if (equipeCreate.id == temp.id && isCreate)
+        {
+            isCreate = false;
+        }
+        else
+        {
+            isCreate = true;
+            isEdit = true;
+        }
+    }
+
+    private async void createEquipe()
+    {
+        if (!isEdit)
+        {
+            Equipe e = new Equipe(Convert.ToBoolean($"{this.equipeCreate.isSenior}"), $"{this.equipeCreate.nom}", Convert.ToDouble($"{this.equipeCreate.cotisationBase}"));
+            HttpResponseMessage response = await Http.PostAsJsonAsync("http://localhost:8000/create-equipe", e);
+        
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = JsonObject.Parse(responseBody);
+        
+            Equipe lastEquipe = new Equipe(responseJson["id"].GetValue<int>(), responseJson["is_senior"].GetValue<Boolean>(), responseJson["nom"].GetValue<string>(), responseJson["cotisation_base"].GetValue<Double>());
+            _equipes.Add(lastEquipe);
+        }
+        else
+        {
+            Equipe edited = _equipes.Find(x => x.id == Convert.ToInt16($"{this.equipeCreate.id}"));
+            edited.nom = $"{this.equipeCreate.nom}";
+            edited.isSenior = Convert.ToBoolean($"{this.equipeCreate.isSenior}");
+            edited.cotisationBase = Convert.ToDouble($"{this.equipeCreate.cotisationBase}");
+            HttpResponseMessage response = await Http.PutAsJsonAsync("http://localhost:8000/edit-equipe/" + edited.id, edited);
+        }
+    }
+}

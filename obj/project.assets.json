@@ -1806,11 +1806,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/emilienp/Bureau/Dev/ProjetAnnee1/ASSagy_front/ASSagy_front.csproj",
-      "projectName": "ASSagy_front",
-      "projectPath": "/home/emilienp/Bureau/Dev/ProjetAnnee1/ASSagy_front/ASSagy_front.csproj",
+      "projectUniqueName": "/home/emilienp/Bureau/Dev/ProjetAnnee1/projetASSagy_front/projetASSagy_front1.csproj",
+      "projectName": "projetASSagy_front1",
+      "projectPath": "/home/emilienp/Bureau/Dev/ProjetAnnee1/projetASSagy_front/projetASSagy_front1.csproj",
       "packagesPath": "/home/emilienp/.nuget/packages/",
-      "outputPath": "/home/emilienp/Bureau/Dev/ProjetAnnee1/ASSagy_front/obj/",
+      "outputPath": "/home/emilienp/Bureau/Dev/ProjetAnnee1/projetASSagy_front/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/emilienp/.nuget/NuGet/NuGet.Config"

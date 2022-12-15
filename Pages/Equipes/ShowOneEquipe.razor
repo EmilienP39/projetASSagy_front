@@ -1,0 +1,47 @@
+@page "/ShowOneEquipe/{id}"
+@inherits ShowOneEquipeCode
+@inject HttpClient Http
+
+<h1>Coucou c les @_equipe.nom</h1>
+<table class="table table-dark">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Prénom</th>
+        <th>Points</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (User user in _equipe.users)
+    {
+        <tr>
+            <td>@user.id</td>
+            <td>@user.nom</td>
+            <td>@user.prenom</td>
+            <td>@user.point</td>
+        </tr>
+    }            
+    </tbody>  
+</table>
+
+
+@code{
+    Equipe _equipe = new Equipe();
+    int totalPointsEquipe = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _equipe = await Http.GetFromJsonAsync<Equipe>("http://localhost:8000/equipe/" + @Id);
+        foreach (User user in _equipe.users)
+        {
+            totalPointsEquipe += user.point;
+        }
+        User totalPoints = new User(totalPointsEquipe);
+        _equipe.users.Add(totalPoints);
+    }
+
+    
+    
+    
+}
