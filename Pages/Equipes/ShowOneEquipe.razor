@@ -32,7 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _equipe = await Http.GetFromJsonAsync<Equipe>("http://localhost:8000/equipe/" + @Id);
+        _equipe = await Http.GetFromJsonAsync<Equipe>("https://localhost:8000/equipe/" + @Id);
         foreach (User user in _equipe.users)
         {
             totalPointsEquipe += user.point;
@@ -40,8 +40,4 @@
         User totalPoints = new User(totalPointsEquipe);
         _equipe.users.Add(totalPoints);
     }
-
-    
-    
-    
 }

@@ -1,6 +1,151 @@
-@page "/IndexAvantages"
-<h3>IndexAvantages</h3>
+@page "/avantages"
+@using Blazored.LocalStorage
+@using System.Text.Json.Nodes
+@inject ISyncLocalStorageService localStorage
+@inject NavigationManager NavManager
+@if (localStorage.GetItem<string>("user_roles") == "Admin")
+{
+    @inject HttpClient Http
+
+
+<h3>Avantages</h3>
+    <button class="btn btn-info" @onclick="() => showForm()">Créer</button>
+
+    <table class="table table-dark">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Senior ?</th>
+            <th>Cotisation Base</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @foreach (Avantage avantage in avantages)
+        {
+            <tr>
+                <td>@avantage.id</td>
+                <td>@avantage.libelle</td>
+                <td>@(avantage.categorie == 1 ? "Sénior" : avantage.categorie == 2 ? "Jeune" : "Les deux")</td>
+                <td>@avantage.points</td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => delete(avantage.id)">Supprimer</button>
+                    <button class="btn btn-warning" @onclick="() => showEditForm(avantage)">Modifier</button>
+                </td>
+            </tr>
+        }
+
+        </tbody>
+    </table>
+
+
+@if (isCreate)
+{
+    <EditForm Model="avantageCreate" OnValidSubmit="@createAvantage">
+        <div>
+            <label for="libelle">Nom</label><br/>
+            <InputText id="libelle" @bind-Value="avantageCreate.libelle"/>
+        </div>
+        <div>
+            <label for="categorie">Sénior ?</label><br/>
+            <InputSelect id="categorie" @bind-Value="avantageCreate.categorie">
+                <option value="0">Sénior et Jeune</option>
+                <option value="1">Sénior</option>
+                <option value="2">Jeune</option>
+            </InputSelect>
+        </div>
+        <div>
+            <label for="points">Cotisation de base ?</label><br/>
+            <InputNumber id="points" @bind-Value="avantageCreate.points"/>
+        </div>
+        <br/>
+        <button class="btn btn-outline-primary" type="submit">Submit</button>
+    </EditForm>
+}
+}
 
 @code {
+    private bool isCreate;
+    private bool isEdit;
+    private Avantage avantageCreate = new Avantage();
+    List<Avantage> avantages = new List<Avantage>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (localStorage.GetItem<string>("user_roles") == "Admin")
+        {
+            avantages = await Http.GetFromJsonAsync<List<Avantage>>("https://localhost:8000/avantages");
+        }
+        else
+        {
+            NavManager.NavigateTo("/Unauthorize");
+        }
+    }
+
+    public async void delete(int idAvantage)
+    {
+        try
+        {
+            await Http.DeleteAsync("https://localhost:8000/delete-avantage/" + idAvantage);
+            Avantage avantage1 = avantages.Find(x => x.id == idAvantage);
+            int index = avantages.IndexOf(avantage1);
+            avantages.RemoveAt(index);
+        }
+        catch( Exception e)
+        {
+            Console.Write(e);
+            throw;
+        }
+    }
+
+    public void showEditForm(Avantage avantage)
+    {
+        Avantage temp = avantageCreate;
+        avantageCreate = avantage;
+
+        if (avantageCreate.id == temp.id && isCreate)
+        {
+            isCreate = false;
+        }
+        else
+        {
+            isCreate = true;
+            isEdit = true;
+        }
+    }
+
+    public async void createAvantage()
+    {
+        if (!isEdit)
+        {
+            Avantage a = new Avantage($"{this.avantageCreate.libelle}", Convert.ToInt16($"{this.avantageCreate.points}"), Convert.ToInt16($"{this.avantageCreate.categorie}"));
+            HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-avantage", a);
+        
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = JsonObject.Parse(responseBody);
+        
+            Avantage lastAvantage = new Avantage(responseJson["id"].GetValue<int>(), responseJson["libelle"].GetValue<string>(), responseJson["points"].GetValue<int>(), responseJson["categorie"].GetValue<int>());
+            avantages.Add(lastAvantage);
+        }
+        else
+        {
+            Avantage edited = avantages.Find(x => x.id == Convert.ToInt16($"{this.avantageCreate.id}"));
+            edited.libelle = $"{this.avantageCreate.libelle}";
+            edited.categorie = Convert.ToInt16($"{this.avantageCreate.categorie}");
+            edited.points = Convert.ToInt16($"{this.avantageCreate.points}");
+            await Http.PutAsJsonAsync("https://localhost:8000/edit-avantage/" + edited.id, edited);
+        }
+    }
     
+    private void showForm()
+    {
+        isCreate = !isCreate;
+        if (isCreate)
+        {
+            avantageCreate = new Avantage();
+        }
+        isEdit = false;
+    }
 }
