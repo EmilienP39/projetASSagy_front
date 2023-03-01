@@ -4,19 +4,17 @@
 @inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
 
-
 <h3>Login</h3>
 @if (localStorage.GetItem<string>("token") == null)
 {
     <div>
-        <input type="text" @bind="username"/>
-        <input type="password" @bind="password"/>
-        <input type="submit" @onclick="logIn"/>
-    </div>
+        <input type="text" @bind="username" placeholder="Nom d'utilisateur"/>
+        <input type="password" @bind="password" placeholder="Mot de passe"/>
+        <input type="submit" @onclick="logIn" content="Se connecter"></div>
 }
 @if (localStorage.GetItem<string>("token") != null)
 {
-    
+    NavManager.NavigateTo("home");
 }
 
 

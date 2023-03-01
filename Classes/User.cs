@@ -1,10 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace projetASSagy_front1.Classes;
 
 public class User
 {
     public int id { get; set; }
+    [Required]
     public string nom { get; set; }
+    [Required]
     public string prenom { get; set; }
+    [Required]
     public string username { get; set; }
     public int point { get; set; }
 

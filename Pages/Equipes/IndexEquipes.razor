@@ -3,14 +3,38 @@
 @using System.Text.Json.Nodes
 @inject ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
+
 @if (localStorage.GetItem<string>("user_roles") == "Admin")
 {
     @inject HttpClient Http
-    @inject IDialogService DialogService
 
 
-<h3>Equipe</h3>
-<button class="btn btn-info" @onclick="() => showForm()">Créer</button>
+    <h3>Equipe</h3>
+    <MudButton class="btn btn-info" @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">Créer</MudButton>
+    
+    <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions">
+        <DialogContent>
+         <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
+             <MudTextField Label="Nom" T="string" id="nom" @bind-Value="equipeCreate.nom" />
+             <div>
+                 <label for="isSenior">Sénior ?</label><br/>
+                 <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
+             </div>
+             <MudNumericField Label="Cotisation base" T="double" id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
+         </EditForm>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
+                    @if (isEdit)
+                    {
+                        <MudButton @onclick="editEquipe">Modifier</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton @onclick="createEquipe">Créer</MudButton>
+                    }
+        </DialogActions>
+    </MudDialog>
 
     <table class="table table-dark">
         <thead>
@@ -40,26 +64,7 @@
         }
         </tbody>
     </table>
-
-@if (isCreate)
-{
-    <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
-        <div>
-            <label for="nom">Nom</label><br/>
-            <InputText id="nom" @bind-Value="equipeCreate.nom"/>
-        </div>
-        <div>
-            <label for="isSenior">Sénior ?</label><br/>
-            <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
-        </div>
-        <div>
-            <label for="cotisationBase">Cotisation de base ?</label><br/>
-            <InputNumber id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
-        </div>
-        <br/>
-        <button class="btn btn-outline-primary" type="submit">Submit</button>
-    </EditForm>
-}
+    
 }
 
 @code {
@@ -67,8 +72,16 @@
     Equipe equipeCreate = new Equipe();
     private Boolean isCreate;
     private Boolean isEdit;
+    private DialogOptions dialogOptions = new() { FullWidth = true };
+    private Boolean isVisible;
+    private void OpenDialog()
+    {
+        isVisible = true;
+        isEdit = false;
+        equipeCreate = new Equipe();
+    }
 
-    private List<Equipe>? _equipes;
+    public List<Equipe>? _equipes;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,7 +91,7 @@
         }
         else
         {
-            NavManager.NavigateTo("/Unauthorize");
+            NavManager.NavigateTo("/Unauthorize2");
         }
 
     }
@@ -103,60 +116,33 @@
     {
         NavManager.NavigateTo($"/ShowOneEquipe/{id}");
     }
-
-    private void showForm()
-    {
-        /*isCreate = !isCreate;
-        if (isCreate)
-        {
-            equipeCreate = new Equipe();
-        }
-        isEdit = false;*/
-    }
     
     private void showEditForm(Equipe equipe)
     {
-        Equipe temp = equipeCreate;
         equipeCreate = equipe;
-
-        if (equipeCreate.id == temp.id && isCreate)
-        {
-            isCreate = false;
-        }
-        else
-        {
-            isCreate = true;
-            isEdit = true;
-        }
+        isVisible = true;
+        isEdit = true;
     }
 
-    private async void createEquipe()
+    private async void editEquipe()
     {
-        if (!isEdit)
-        {
-            Equipe e = new Equipe(Convert.ToBoolean($"{this.equipeCreate.isSenior}"), $"{this.equipeCreate.nom}", Convert.ToDouble($"{this.equipeCreate.cotisationBase}"));
-            HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-equipe", e);
-        
-            string responseBody = await response.Content.ReadAsStringAsync();
-            var responseJson = JsonObject.Parse(responseBody);
-        
-            Equipe lastEquipe = new Equipe(responseJson["id"].GetValue<int>(), responseJson["is_senior"].GetValue<Boolean>(), responseJson["nom"].GetValue<string>(), responseJson["cotisation_base"].GetValue<Double>());
-            _equipes.Add(lastEquipe);
-        }
-        else
-        {
-            Equipe edited = _equipes.Find(x => x.id == Convert.ToInt16($"{this.equipeCreate.id}"));
-            edited.nom = $"{this.equipeCreate.nom}";
-            edited.isSenior = Convert.ToBoolean($"{this.equipeCreate.isSenior}");
-            edited.cotisationBase = Convert.ToDouble($"{this.equipeCreate.cotisationBase}");
-            await Http.PutAsJsonAsync("https://localhost:8000/edit-equipe/" + edited.id, edited);
-        }
+        Equipe edited = _equipes.Find(x => x.id == Convert.ToInt16($"{this.equipeCreate.id}"));
+        edited.nom = $"{this.equipeCreate.nom}";
+        edited.isSenior = Convert.ToBoolean($"{this.equipeCreate.isSenior}");
+        edited.cotisationBase = Convert.ToDouble($"{this.equipeCreate.cotisationBase}");
+        await Http.PutAsJsonAsync("https://localhost:8000/edit-equipe/" + edited.id, edited);
+        isVisible = false;
     }
-    
-    private async void OpenDialog()
+
+    public async void createEquipe()
     {
-        Console.WriteLine("Coucou");
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        DialogService.Show<CreateEquipe_Dialog>("Sex", options);
+        HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-equipe", equipeCreate);
+        
+        string responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = JsonObject.Parse(responseBody);
+        
+        Equipe lastEquipe = new Equipe(responseJson["id"].GetValue<int>(), responseJson["is_senior"].GetValue<Boolean>(), responseJson["nom"].GetValue<string>(), responseJson["cotisation_base"].GetValue<Double>());
+        _equipes.Add(lastEquipe);
+        isVisible = false;
     }
 }

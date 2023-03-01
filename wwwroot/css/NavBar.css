@@ -1,0 +1,372 @@
+@import 'https://fonts.googleapis.com/css?family=Raleway';
+
+#app{
+    margin: 0;
+}
+
+.hidden{
+    visibility: hidden;
+}
+
+html, body
+{
+    margin: 0;
+    scrollbar-width: none;
+    overflow-y: scroll;
+}
+
+div.nav-container
+{
+    z-index: 1;
+    font-family: Raleway;
+    margin: 0;
+    padding: 1em 0;
+    text-align: center;
+    align-items: center;
+    /*position: fixed;*/
+    width: 100%;
+    top: 0;
+    left:0;
+    display: block;
+}
+
+div.nav-container .nav-right{
+    position: fixed;
+    right: 0;
+    top:0.2em;
+}
+
+div.nav-container a
+{
+    color: #FFF;
+    text-decoration: none;
+    font: 20px Raleway;
+    margin: 10px;
+    padding: 5px 10px;
+    position: relative;
+    z-index: 0;
+    cursor: pointer;
+}
+
+.red
+{
+    background: #f44336;
+    opacity: 1;
+}
+
+div.topBotomBordersIn a:before, div.topBotomBordersIn a:after
+{
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #FFF;
+    content: "";
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+div.topBotomBordersIn a:before
+{
+    top: 0;
+    transform: translateY(-10px);
+}
+
+div.topBotomBordersIn a:after
+{
+    bottom: 0;
+    transform: translateY(10px);
+}
+
+div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
+{
+    opacity: 1;
+    transform: translateY(0px);
+}
+
+@keyframes bottomright {
+    0% {
+        width: 0;
+        height: 0;
+        padding-top: 0;
+        visibility: visible;
+    }
+    25% {
+        width: 100%;
+        height: 0;
+        padding-top: 0;
+        visibility: visible;
+    }
+    50% {
+        height: 100%;
+        width: 100%;
+        visibility: visible;
+    }
+    75% {
+        visibility: visible;
+    }
+    100% {
+        visibility: visible;
+    }
+}
+
+@keyframes revbottomright {
+    0% {
+        width: 100%;
+        height: 100%;
+        visibility: visible;
+    }
+    25% {
+        width: 100%;
+        height: 100%;
+        visibility: visible;
+    }
+    50% {
+        width: 100%;
+        height: 100%;
+        visibility: visible;
+    }
+    75% {
+        width: 100%;
+        height: 0;
+        padding-top: 0;
+        visibility: visible;
+    }
+    100% {
+        width: 0;
+        height: 0;
+        padding-top: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes topleft {
+    0% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+    25% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+    50% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+    75% {
+        width: 100%;
+        height: 0;
+        padding-bottom: 0;
+        visibility: visible;
+    }
+    100% {
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+@keyframes revtopleft {
+    0% {
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+        visibility: visible;
+    }
+    25% {
+        width: 100%;
+        height: 0;
+        padding-bottom: 0;
+        visibility: visible;
+    }
+    50% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+    75% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+    100% {
+        width: 0;
+        height: 0;
+        padding-bottom: 0;
+        visibility: hidden;
+    }
+}
+
+.nav-right{
+    font-family: Gotham, Tahoma, sans-serif;
+    font-weight: 900;
+    letter-spacing: 1px;
+    transition: color 0.75s ease-in-out;
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 10px;
+    position: relative;
+    border: 1px solid white;
+}
+
+.nav-right:hover {
+    color: #9a031e;
+    transition: color 0.75s ease-in-out;
+}
+
+.nav-right:after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    padding-right: 5px;
+    left: -5px;
+    width: 100%;
+    height: 100%;
+    border-bottom: 1px solid #f44336;
+    border-right: 1px solid #f44336;
+    visibility: hidden;
+}
+
+.nav-right:before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: -5px;
+    padding-left: 5px;
+    width: 100%;
+    height: 100%;
+    border-top: 1px solid #f44336;
+    border-left: 1px solid #f44336;
+    visibility: hidden;
+}
+
+.nav-right:hover:before {
+    animation: topleft 0.5s ease-in-out forwards;
+}
+
+.nav-right:hover:after {
+    animation: bottomright 0.5s ease-in-out forwards;
+}
+
+.nav-right.active:before {
+    animation: revtopleft 0.5s ease-in-out forwards;
+}
+
+.nav-right.active:after {
+    animation: revbottomright 0.5s ease-in-out forwards;
+}
+
+.nav-right.active:before,
+.nav-right.active:after {
+    width: 100%;
+    height: 100%;
+    visibility: visible;
+}
+
+.nav-right.temp:before, .nav-right.temp:after {
+    width: 100%;
+    height: 100%;
+    visibility: visible;
+}
+
+.wrapper{
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.wrapper button{
+    display: block;
+    width: 200px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 18px;
+    font-family: sans-serif;
+    text-decoration: none;
+    color: #333;
+    border: 2px solid #333;
+    letter-spacing: 2px;
+    text-align: center;
+    position: relative;
+    transition: all .35s;
+}
+
+.wrapper button span{
+    position: relative;
+    z-index: 2;
+}
+
+.wrapper button:after{
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: #ff003b;
+    transition: all .35s;
+}
+
+.wrapper button:hover{
+    color: #fff;
+}
+
+.wrapper button:hover:after{
+    width: 100%;
+}
+
+.dropbtn {
+    background: #9a031e;
+    border: 2px solid white;
+    color: white;
+    padding: 16px;
+    font-size: 20px;
+
+}
+
+.dropdown {
+    position: absolute;
+    top: 1em;
+    right: 0;
+    display: inline-block;
+
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: transparent;
+    min-width: 160px;
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {background-color: #ddd;}
+
+.dropdown:hover .dropdown-content {display: block;}
+
+.dropdown:hover .dropbtn {background-color: #9a031e;}
+
+.logs{
+    display: inline;
+    float: right;
+    
+}
+  
+  

@@ -1,10 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace projetASSagy_front1.Classes;
 
 public class Avantage
 {
     public int id { get; set; }
+    [Required]
     public string libelle { get; set; }
+    [Required]
     public int points { get; set; }
+    [Required]
     public int categorie { get; set; } //0 les deux  1 sénior  2 jeune
 
     public Avantage()

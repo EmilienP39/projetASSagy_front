@@ -8,53 +8,70 @@
 @inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
 <h3>Home</h3>
-<table class="table table-dark">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Libelle</th>
-        <th>Commentaire</th>
-        <th>Points</th>
-        <th>Date</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        @foreach (UserAvantage userAvantage in _userAvantages)
-        {
-            <td>@userAvantage.id</td>
-            <td>@_avantages.Find(x => x.id == userAvantage.idAvantage).libelle</td>
-            @if (userAvantage.commentaire != "")
+
+@if (isAdmin)
+{
+    <p>Admin</p>
+}
+else
+{
+    <table class="table table-dark">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Libelle</th>
+            <th>Commentaire</th>
+            <th>Points</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            @foreach (UserAvantage userAvantage in _userAvantages)
             {
-                <td>@userAvantage.commentaire</td>
+                <td>@userAvantage.id</td>
+                <td>@_avantages.Find(x => x.id == userAvantage.idAvantage).libelle</td>
+                @if (userAvantage.commentaire != "")
+                {
+                    <td>@userAvantage.commentaire</td>
+                }
+                else
+                {
+                    <td>Pas de commentaire</td>
+                }
+                <td>@userAvantage.points</td>
+                <td>@userAvantage.created</td>
             }
-            else
-            {
-                <td>Pas de commentaire</td>
-            }
-            <td>@userAvantage.points</td>
-            <td>@userAvantage.created</td>
-        }
-    </tr>
-    </tbody>  
-</table>
+        </tr>
+        </tbody>
+    </table>
+}
 
 
 @code {
     List<UserAvantage> _userAvantages;
     List<Avantage> _avantages;
+    private bool isAdmin;
     protected override async Task OnInitializedAsync()
     {
-        if (localStorage.GetItem<string>("user_id") != null)
+        if (localStorage.GetItem<string>("user_id") != null) 
         {
-            _userAvantages = await http.GetFromJsonAsync<List<UserAvantage>>("https://localhost:8000/avantage-user/" + localStorage.GetItem<int>("user_id"));
-            Console.WriteLine("Alo" + _userAvantages);
-            _avantages = await http.GetFromJsonAsync<List<Avantage>>("https://localhost:8000/avantages");
+            if (localStorage.GetItem<string>("user_roles") != "Admin")
+            {
+                _userAvantages = await http.GetFromJsonAsync<List<UserAvantage>>("https://localhost:8000/avantage-user/" + localStorage.GetItem<int>("user_id"));
+                _avantages = await http.GetFromJsonAsync<List<Avantage>>("https://localhost:8000/avantages");
+            }
+            else
+            {
+                isAdmin = true;
+            }
         }
         else
         {
-            Console.WriteLine("Pas d'id");
-            NavManager.NavigateTo("/login");
+            /*Console.WriteLine("Pas d'id");
+            NavManager.NavigateTo("/login");*/
+            Console.WriteLine("Le role " + localStorage.GetItem<string>("user_roles"));
+            Console.WriteLine("Donc c'est pas admin ? " + localStorage.GetItem<string>("user_roles") != "Admin");
         }
     }
 }
