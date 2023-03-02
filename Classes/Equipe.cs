@@ -11,6 +11,7 @@ public class Equipe
     [Required]
     public string nom { get; set; }
     [Required]
+    [Range(20, 150, ErrorMessage = "La cotisation doit être comprise entre 20 et 150 euros")]
     public double cotisationBase { get; set; }
     
     public List<User> users { get; set; }

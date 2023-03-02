@@ -9,41 +9,38 @@
 
 <div class="container align-items-center">
 <h3>Avantages</h3>
-    <MudButton class="btn btn-info" @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">Créer</MudButton>
-
-    <table class="table table-dark">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Senior ?</th>
-            <th>Cotisation Base</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-
-        @foreach (Avantage avantage in avantages)
-        {
-            <tr>
-                <td>@avantage.id</td>
-                <td>@avantage.libelle</td>
-                <td>@(avantage.categorie == 1 ? "Sénior" : avantage.categorie == 2 ? "Jeune" : "Les deux")</td>
-                <td>@avantage.points</td>
-                <td>
-                    <button class="btn btn-danger" @onclick="() => delete(avantage.id)">Supprimer</button>
-                    <button class="btn btn-warning" @onclick="() => showEditForm(avantage)">Modifier</button>
-                </td>
-            </tr>
-        }
-
-        </tbody>
-    </table>
+        <MudButton class="btn btn-info" @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">Créer</MudButton>
+        <MudTable Items="avantages" Hover="true" >
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Nom</MudTh>
+                <MudTh>Senior ?</MudTh>
+                <MudTh>Points</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.id</MudTd>
+                <MudTd DataLabel="Nom">@context.libelle</MudTd>
+                <MudTd DataLabel="Senior ?">@(context.categorie == 1 ? "Sénior" : context.categorie == 2 ? "Jeune" : "Les deux")</MudTd>
+                <MudTd DataLabel="Points">@context.points</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudButton @onclick="() => delete(context.id)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
+                    <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
 
-<MudDialog @bind-IsVisible="isVisible" Options="dialogOptions">
-        <DialogContent>
+        <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions">
+                <TitleContent>
+                    <MudText Typo="Typo.h6">
+                        @(isEdit ? "Modifier" : "Créer") un avantage
+                    </MudText>
+                </TitleContent>
+            <DialogContent>
                 <EditForm Model="avantageCreate" OnValidSubmit="@createAvantage">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
                     <MudTextField Label="Libellé" T="string" @bind-Value="avantageCreate.libelle"/><br/>
                     <label>Catégorie</label>
                     <select @bind="avantageCreate.categorie" class="form-select">
@@ -52,21 +49,13 @@
                         <option value="2">Jeune</option>
                     </select>
                     <MudNumericField Label="Points" @bind-Value="avantageCreate.points"/>
+                    <br>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(isEdit ? "Modifier" : "Créer")</MudButton>
+                    <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
                 </EditForm>
-        </DialogContent>
-        <DialogActions>
-            <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
-            @if (isEdit)
-            {
-                <MudButton @onclick="editAvantage">Modifier</MudButton>
-            }
-            else
-            {
-                <MudButton @onclick="createAvantage">Créer</MudButton>
-            }
-        </DialogActions>
-    </MudDialog>
-    </div>
+            </DialogContent>
+        </MudDialog>
+        </div>
 }
 
 @code {
@@ -121,26 +110,27 @@
 
     public async void createAvantage()
     {
-        Avantage a = new Avantage($"{this.avantageCreate.libelle}", Convert.ToInt16($"{this.avantageCreate.points}"), Convert.ToInt16($"{this.avantageCreate.categorie}"));
-        HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-avantage", a);
-        
-        string responseBody = await response.Content.ReadAsStringAsync();
-        var responseJson = JsonObject.Parse(responseBody);
-        
-        Avantage lastAvantage = new Avantage(responseJson["id"].GetValue<int>(), responseJson["libelle"].GetValue<string>(), responseJson["points"].GetValue<int>(), responseJson["categorie"].GetValue<int>());
-        avantages.Add(lastAvantage);
-        
-        isVisible = false;
-    }
+        if (!isEdit)
+        {
+            Console.WriteLine("Coucou");
+            Avantage a = new Avantage($"{this.avantageCreate.libelle}", Convert.ToInt16($"{this.avantageCreate.points}"), Convert.ToInt16($"{this.avantageCreate.categorie}"));
+            HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-avantage", a);
 
-    public async void editAvantage()
-    {
-        Avantage edited = avantages.Find(x => x.id == Convert.ToInt16($"{this.avantageCreate.id}"));
-        edited.libelle = $"{this.avantageCreate.libelle}";
-        edited.categorie = Convert.ToInt16($"{this.avantageCreate.categorie}");
-        edited.points = Convert.ToInt16($"{this.avantageCreate.points}");
-        await Http.PutAsJsonAsync("https://localhost:8000/edit-avantage/" + edited.id, edited);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = JsonObject.Parse(responseBody);
+
+            Avantage lastAvantage = new Avantage(responseJson["id"].GetValue<int>(), responseJson["libelle"].GetValue<string>(), responseJson["points"].GetValue<int>(), responseJson["categorie"].GetValue<int>());
+            avantages.Add(lastAvantage);
+        }
+        else
+        {
+            Console.WriteLine("Coucou Pas Edit");
+            Avantage edited = avantages.Find(x => x.id == Convert.ToInt16($"{this.avantageCreate.id}"));
+            edited.libelle = $"{this.avantageCreate.libelle}";
+            edited.categorie = Convert.ToInt16($"{this.avantageCreate.categorie}");
+            edited.points = Convert.ToInt16($"{this.avantageCreate.points}");
+            await Http.PutAsJsonAsync("https://localhost:8000/edit-avantage/" + edited.id, edited);
+        }
         isVisible = false;
     }
-    
 }
