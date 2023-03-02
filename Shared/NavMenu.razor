@@ -2,27 +2,26 @@
 @inject NavigationManager NavManager
 
 <div class="nav-container red ">
-    <div class="topBotomBordersIn">
-        <div>
-            @if (localStorage.GetItemAsString("token") != null)
-            {
-                <div class="logs">
-                    <span class="btn btn-info">@Convert.ToString(localStorage.GetItem<string>("user_nom"))</span>
-                    <NavLink href="login">
-                        <span class="btn btn-success" @onclick="logOut">Se déconnecter</span>
-                    </NavLink>
-                </div>
-            }
-            else
-            {
-                <div class="logs">
-                    <NavLink href="login">
-                        <span class="oi oi-list-rich" aria-hidden="true"></span> Se connecter
-                    </NavLink>
+            <div>
+                @if (localStorage.GetItemAsString("token") != null)
+                {
+                    <div class="logs">
+                        <span class="btn btn-info">@Convert.ToString(localStorage.GetItem<string>("user_nom"))</span>
+                        <NavLink href="login">
+                            <span class="btn btn-success" @onclick="logOut">Se déconnecter</span>
+                        </NavLink>
                     </div>
-            }
-        </div>
-
+                }
+                else
+                {
+                    <div class="logs">
+                        <NavLink href="login">
+                            <span class="oi oi-list-rich" aria-hidden="true"></span> Se connecter
+                        </NavLink>
+                        </div>
+                }
+            </div>
+    <div class="topBotomBordersIn">
         <NavLink class="nav-link1" href="home" Match="NavLinkMatch.All">
             <span class="oi oi-home" aria-hidden="true"></span> Home
         </NavLink>

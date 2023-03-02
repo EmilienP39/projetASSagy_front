@@ -8,33 +8,9 @@
 {
     @inject HttpClient Http
 
-
+<div class="container align-items-center">
     <h3>Equipe</h3>
-    <MudButton class="btn btn-info" @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">Créer</MudButton>
-    
-    <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions">
-        <DialogContent>
-         <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
-             <MudTextField Label="Nom" T="string" id="nom" @bind-Value="equipeCreate.nom" />
-             <div>
-                 <label for="isSenior">Sénior ?</label><br/>
-                 <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
-             </div>
-             <MudNumericField Label="Cotisation base" T="double" id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
-         </EditForm>
-        </DialogContent>
-        <DialogActions>
-            <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
-                    @if (isEdit)
-                    {
-                        <MudButton @onclick="editEquipe">Modifier</MudButton>
-                    }
-                    else
-                    {
-                        <MudButton @onclick="createEquipe">Créer</MudButton>
-                    }
-        </DialogActions>
-    </MudDialog>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialog">Créer</MudButton>
 
     <table class="table table-dark">
         <thead>
@@ -58,18 +34,43 @@
                 <td><button class="btn btn-info" @onclick="() => move(ekip.id)">Voir</button></td>
                 <td>
                     <button class="btn btn-danger" @onclick="() => delete(ekip.id)">Supprimer</button>
-                    <button class="btn btn-warning" @onclick="() => showEditForm(ekip)">Modifier</button>
+                    <button class="btn btn-warning" @onclick="() => showEditForm(ekip)" >Modifier</button>
                 </td>
             </tr>
         }
         </tbody>
     </table>
     
+    <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions" class="d-flex justify-content-center">
+        <DialogContent>
+            <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
+                <MudTextField Label="Nom" T="string" id="nom" @bind-Value="equipeCreate.nom" />
+                <div>
+                    <label for="isSenior">Sénior ?</label><br/>
+                    <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
+                </div>
+                <MudNumericField Label="Cotisation base" T="double" id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
+            </EditForm>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
+            @if (isEdit)
+            {
+                <MudButton @onclick="editEquipe">Modifier</MudButton>
+            }
+            else
+            {
+                <MudButton @onclick="createEquipe">Créer</MudButton>
+            }
+        </DialogActions>
+    </MudDialog>
+    </div>
+
 }
 
 @code {
     
-    Equipe equipeCreate = new Equipe();
+    Equipe equipeCreate;
     private Boolean isCreate;
     private Boolean isEdit;
     private DialogOptions dialogOptions = new() { FullWidth = true };
