@@ -3,16 +3,16 @@
 @using System.Text.Json.Nodes
 @inject ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
+@inject Server apiUrl
 
 @if (localStorage.GetItem<string>("user_roles") == "Admin")
 {
     @inject HttpClient Http
-
-<div class="container align-items-center">
-    <h3>Equipe</h3>
+    <div class="container align-items-center">
+        <h3>Equipe</h3>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" @onclick="OpenDialog">Créer</MudButton>
 
-        <MudTable Items="_equipes" Hover="true" >
+        <MudTable Items="_equipes" Hover="true">
             <HeaderContent>
                 <MudTh>ID</MudTh>
                 <MudTh>Nom</MudTh>
@@ -26,49 +26,71 @@
                 <MudTd DataLabel="Senior ?">@(context.isSenior ? "Sénior" : "Jeune")</MudTd>
                 <MudTd DataLabel="Cotisation Base">@context.cotisationBase</MudTd>
                 <MudTd DataLabel="Actions">
-                    <MudButton @onclick="() => delete(context.id)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
+                    <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
                     <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
                 </MudTd>
             </RowTemplate>
+            <PagerContent>
+                <MudTablePager/>
+            </PagerContent>
         </MudTable>
         <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions" class="d-flex justify-content-center">
-        <DialogContent>
+            <DialogContent>
+                <TitleContent>
+                    <MudText Typo="Typo.h6">
+                        @(isEdit ? "Modifier" : "Créer") une équipe
+                    </MudText>
+                </TitleContent>
+                <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+                    <MudTextField Label="Nom" T="string" id="nom" @bind-Value="equipeCreate.nom"/>
+                    <div>
+                        <label for="isSenior">Sénior ?</label><br/>
+                        <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
+                    </div>
+                    <MudNumericField Label="Cotisation base" T="double" id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
+                    <br>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(isEdit ? "Modifier" : "Créer")</MudButton>
+                    <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
+                </EditForm>
+            </DialogContent>
+        </MudDialog>
+        <MudDialog @bind-IsVisible="isDeleteVisible" Options="dialogOptions">
             <TitleContent>
                 <MudText Typo="Typo.h6">
-                    @(isEdit ? "Modifier" : "Créer") une équipe
+                    Voulez vous vraiment supprimer l'équipe @equipeDelete.nom ?
                 </MudText>
             </TitleContent>
-            <EditForm Model="equipeCreate" OnValidSubmit="@createEquipe">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-                <MudTextField Label="Nom" T="string" id="nom" @bind-Value="equipeCreate.nom"/>
-                <div>
-                    <label for="isSenior">Sénior ?</label><br/>
-                    <InputCheckbox id="isSenior" @bind-Value="equipeCreate.isSenior"/>
-                </div>
-                <MudNumericField Label="Cotisation base" T="double" id="cotisationBase" @bind-Value="equipeCreate.cotisationBase"/>
-                <br>
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">@(isEdit ? "Modifier" : "Créer")</MudButton>
-                <MudButton OnClick="() => isVisible = false">Annuler</MudButton>
-            </EditForm>
-        </DialogContent>
-    </MudDialog>
-</div>
-
+            <DialogActions>
+                <MudButton OnClick="() => delete(equipeDelete.id)" Variant="Variant.Filled" Color="Color.Info">Oui</MudButton>
+                <MudButton OnClick="() => isDeleteVisible = false" Variant="Variant.Filled" Color="Color.Error">Annuler</MudButton>
+            </DialogActions>
+        </MudDialog>
+    </div>
 }
 
 @code {
-    
+
     Equipe equipeCreate;
-    private Boolean isCreate;
-    private Boolean isEdit;
-    private DialogOptions dialogOptions = new() { FullWidth = true };
-    private Boolean isVisible;
+    private bool isCreate;
+    private bool isDeleteVisible;
+    private bool isEdit;
+    private Equipe equipeDelete;
+    private readonly DialogOptions dialogOptions = new() { FullWidth = true };
+    private bool isVisible;
+
     private void OpenDialog()
     {
         isVisible = true;
         isEdit = false;
         equipeCreate = new Equipe();
+    }
+
+    private void OpenDeleteDialog(Equipe equipe)
+    {
+        isDeleteVisible = true;
+        equipeDelete = equipe;
     }
 
     public List<Equipe>? _equipes;
@@ -77,25 +99,24 @@
     {
         if (localStorage.GetItem<string>("user_roles") == "Admin")
         {
-            _equipes = await Http.GetFromJsonAsync<List<Equipe>>("https://localhost:8000/equipes");
+            _equipes = await Http.GetFromJsonAsync<List<Equipe>>(apiUrl.getUrl() + "equipes");
         }
         else
         {
             NavManager.NavigateTo("/Unauthorize2");
         }
-
     }
 
     private async Task delete(int idEquipe)
     {
         try
         {
-            await Http.DeleteAsync("https://localhost:8000/delete-equipe/" + idEquipe);
+            await Http.DeleteAsync(apiUrl.getUrl() + "delete-equipe/" + idEquipe);
             Equipe equipe1 = _equipes.Find(x => x.id == idEquipe);
             int index = _equipes.IndexOf(equipe1);
             _equipes.RemoveAt(index);
         }
-        catch( Exception e)
+        catch (Exception e)
         {
             Console.Write(e);
             throw;
@@ -106,7 +127,7 @@
     {
         NavManager.NavigateTo($"/ShowOneEquipe/{id}");
     }
-    
+
     private void showEditForm(Equipe equipe)
     {
         equipeCreate = equipe;
@@ -118,23 +139,24 @@
     {
         if (!isEdit)
         {
-            HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-equipe", equipeCreate);
+            var response = await Http.PostAsJsonAsync(apiUrl.getUrl() + "create-equipe", equipeCreate);
 
-            string responseBody = await response.Content.ReadAsStringAsync();
-            var responseJson = JsonObject.Parse(responseBody);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = JsonNode.Parse(responseBody);
 
-            Equipe lastEquipe = new Equipe(responseJson["id"].GetValue<int>(), responseJson["is_senior"].GetValue<Boolean>(), responseJson["nom"].GetValue<string>(), responseJson["cotisation_base"].GetValue<Double>());
+            var lastEquipe = new Equipe(responseJson["id"].GetValue<int>(), responseJson["is_senior"].GetValue<bool>(), responseJson["nom"].GetValue<string>(), responseJson["cotisation_base"].GetValue<double>());
             _equipes.Add(lastEquipe);
             isVisible = false;
         }
         else
         {
-            Equipe edited = _equipes.Find(x => x.id == Convert.ToInt16($"{this.equipeCreate.id}"));
-            edited.nom = $"{this.equipeCreate.nom}";
-            edited.isSenior = Convert.ToBoolean($"{this.equipeCreate.isSenior}");
-            edited.cotisationBase = Convert.ToDouble($"{this.equipeCreate.cotisationBase}");
-            await Http.PutAsJsonAsync("https://localhost:8000/edit-equipe/" + edited.id, edited);
+            var edited = _equipes.Find(x => x.id == Convert.ToInt16($"{equipeCreate.id}"));
+            edited.nom = $"{equipeCreate.nom}";
+            edited.isSenior = Convert.ToBoolean($"{equipeCreate.isSenior}");
+            edited.cotisationBase = Convert.ToDouble($"{equipeCreate.cotisationBase}");
+            await Http.PutAsJsonAsync(apiUrl.getUrl() + "edit-equipe/" + edited.id, edited);
             isVisible = false;
         }
     }
+
 }

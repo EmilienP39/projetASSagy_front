@@ -3,14 +3,15 @@
 @using System.Text.Json.Nodes
 @inject ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
+@inject Server apiUrl
+
 @if (localStorage.GetItem<string>("user_roles") == "Admin")
 {
     @inject HttpClient Http
-
-<div class="container align-items-center">
-<h3>Avantages</h3>
+    <div class="container align-items-center">
+        <h3>Avantages</h3>
         <MudButton class="btn btn-info" @onclick="OpenDialog" Variant="Variant.Filled" Color="Color.Primary">Créer</MudButton>
-        <MudTable Items="avantages" Hover="true" >
+        <MudTable Items="avantages" Hover="true">
             <HeaderContent>
                 <MudTh>ID</MudTh>
                 <MudTh>Nom</MudTh>
@@ -24,19 +25,22 @@
                 <MudTd DataLabel="Senior ?">@(context.categorie == 1 ? "Sénior" : context.categorie == 2 ? "Jeune" : "Les deux")</MudTd>
                 <MudTd DataLabel="Points">@context.points</MudTd>
                 <MudTd DataLabel="Actions">
-                    <MudButton @onclick="() => delete(context.id)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
+                    <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
                     <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
                 </MudTd>
             </RowTemplate>
+            <PagerContent>
+                <MudTablePager/>
+            </PagerContent>
         </MudTable>
 
 
         <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions">
-                <TitleContent>
-                    <MudText Typo="Typo.h6">
-                        @(isEdit ? "Modifier" : "Créer") un avantage
-                    </MudText>
-                </TitleContent>
+            <TitleContent>
+                <MudText Typo="Typo.h6">
+                    @(isEdit ? "Modifier" : "Créer") un avantage
+                </MudText>
+            </TitleContent>
             <DialogContent>
                 <EditForm Model="avantageCreate" OnValidSubmit="@createAvantage">
                     <DataAnnotationsValidator/>
@@ -55,17 +59,31 @@
                 </EditForm>
             </DialogContent>
         </MudDialog>
-        </div>
+
+        <MudDialog @bind-IsVisible="isDeleteVisible" Options="dialogOptions">
+            <TitleContent>
+                <MudText Typo="Typo.h6">
+                    Voulez vous vraiment supprimer l'avantage @avantageDelete.libelle ?
+                </MudText>
+            </TitleContent>
+            <DialogActions>
+                <MudButton OnClick="() => delete(avantageDelete)" Variant="Variant.Filled" Color="Color.Info">Oui</MudButton>
+                <MudButton OnClick="() => isDeleteVisible = false" Variant="Variant.Filled" Color="Color.Error">Annuler</MudButton>
+            </DialogActions>
+        </MudDialog>
+    </div>
 }
 
 @code {
     private bool isCreate;
     private bool isEdit;
     public bool isVisible;
+    private bool isDeleteVisible;
+    private Avantage avantageDelete = new();
     private Avantage avantageCreate;
     List<Avantage> avantages;
-    private DialogOptions dialogOptions = new() { FullWidth = true };
-    
+    private readonly DialogOptions dialogOptions = new() { FullWidth = true };
+
     private void OpenDialog()
     {
         isVisible = true;
@@ -73,11 +91,17 @@
         avantageCreate = new Avantage();
     }
 
+    private void OpenDeleteDialog(Avantage avantage)
+    {
+        isDeleteVisible = true;
+        avantageDelete = avantage;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         if (localStorage.GetItem<string>("user_roles") == "Admin")
         {
-            avantages = await Http.GetFromJsonAsync<List<Avantage>>("https://localhost:8000/avantages");
+            avantages = await Http.GetFromJsonAsync<List<Avantage>>(apiUrl.getUrl() + "avantages");
         }
         else
         {
@@ -85,20 +109,22 @@
         }
     }
 
-    public async void delete(int idAvantage)
+    public async void delete(Avantage avantage)
     {
         try
         {
-            await Http.DeleteAsync("https://localhost:8000/delete-avantage/" + idAvantage);
-            Avantage avantage1 = avantages.Find(x => x.id == idAvantage);
-            int index = avantages.IndexOf(avantage1);
+            await Http.DeleteAsync(apiUrl.getUrl() + "delete-avantage/" + avantage.id);
+            var avantage1 = avantages.Find(x => x.id == avantage.id);
+            var index = avantages.IndexOf(avantage1);
             avantages.RemoveAt(index);
         }
-        catch( Exception e)
+        catch (Exception e)
         {
             Console.Write(e);
             throw;
         }
+
+        isDeleteVisible = false;
     }
 
     public void showEditForm(Avantage avantage)
@@ -113,24 +139,25 @@
         if (!isEdit)
         {
             Console.WriteLine("Coucou");
-            Avantage a = new Avantage($"{this.avantageCreate.libelle}", Convert.ToInt16($"{this.avantageCreate.points}"), Convert.ToInt16($"{this.avantageCreate.categorie}"));
-            HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/create-avantage", a);
+            var a = new Avantage($"{avantageCreate.libelle}", Convert.ToInt16($"{avantageCreate.points}"), Convert.ToInt16($"{avantageCreate.categorie}"));
+            var response = await Http.PostAsJsonAsync(apiUrl.getUrl() + "create-avantage", a);
 
-            string responseBody = await response.Content.ReadAsStringAsync();
-            var responseJson = JsonObject.Parse(responseBody);
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseJson = JsonNode.Parse(responseBody);
 
-            Avantage lastAvantage = new Avantage(responseJson["id"].GetValue<int>(), responseJson["libelle"].GetValue<string>(), responseJson["points"].GetValue<int>(), responseJson["categorie"].GetValue<int>());
+            var lastAvantage = new Avantage(responseJson["id"].GetValue<int>(), responseJson["libelle"].GetValue<string>(), responseJson["points"].GetValue<int>(), responseJson["categorie"].GetValue<int>());
             avantages.Add(lastAvantage);
         }
         else
         {
             Console.WriteLine("Coucou Pas Edit");
-            Avantage edited = avantages.Find(x => x.id == Convert.ToInt16($"{this.avantageCreate.id}"));
-            edited.libelle = $"{this.avantageCreate.libelle}";
-            edited.categorie = Convert.ToInt16($"{this.avantageCreate.categorie}");
-            edited.points = Convert.ToInt16($"{this.avantageCreate.points}");
-            await Http.PutAsJsonAsync("https://localhost:8000/edit-avantage/" + edited.id, edited);
+            var edited = avantages.Find(x => x.id == Convert.ToInt16($"{avantageCreate.id}"));
+            edited.libelle = $"{avantageCreate.libelle}";
+            edited.categorie = Convert.ToInt16($"{avantageCreate.categorie}");
+            edited.points = Convert.ToInt16($"{avantageCreate.points}");
+            await Http.PutAsJsonAsync(apiUrl.getUrl() + "edit-avantage/" + edited.id, edited);
         }
         isVisible = false;
     }
+
 }

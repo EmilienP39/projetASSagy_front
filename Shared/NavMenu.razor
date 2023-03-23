@@ -1,37 +1,48 @@
-﻿@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+﻿@using Blazored.LocalStorage
+@inject ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
+@inject Server apiUrl
+@inject HttpClient Http
 
-<div class="nav-container red ">
-            <div>
-                @if (localStorage.GetItemAsString("token") != null)
-                {
-                    <div class="logs">
-                        <span class="btn btn-info">@Convert.ToString(localStorage.GetItem<string>("user_nom"))</span>
-                        <NavLink href="login">
-                            <span class="btn btn-success" @onclick="logOut">Se déconnecter</span>
-                        </NavLink>
-                    </div>
-                }
-                else
-                {
-                    <div class="logs">
-                        <NavLink href="login">
-                            <span class="oi oi-list-rich" aria-hidden="true"></span> Se connecter
-                        </NavLink>
-                        </div>
-                }
+<div class="nav-container red" style="padding: @padding">
+    <div>
+        @if (localStorage.GetItemAsString("token") != null)
+        {
+            <div class="logs">
+                <span class="">@Convert.ToString(localStorage.GetItem<string>("user_nom"))</span>
+                <NavLink href="login">
+                    <span class="btn btn-success" @onclick="logOut">Se déconnecter</span>
+                </NavLink>
             </div>
+        }
+        else
+        {
+            <div class="logs">
+                <NavLink href="login">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Se connecter
+                </NavLink>
+            </div>
+        }
+    </div>
     <div class="topBotomBordersIn">
         <NavLink class="nav-link1" href="home" Match="NavLinkMatch.All">
-            <span class="oi oi-home" aria-hidden="true"></span> Home
+            <MudIcon Icon="@Icons.Material.Filled.Home"/> Home
         </NavLink>
         @if (isAdmin)
         {
             <NavLink class="nav-link1" href="equipe">
-                <span class="oi oi-plus" aria-hidden="true"></span> Equipe
+                <MudIcon Icon="@Icons.Material.Filled.Group"/> Equipe
             </NavLink>
             <NavLink class="nav-link1" href="avantages">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Avantages
+                <MudIcon Icon="@Icons.Material.Filled.Checklist"/> Avantages
+            </NavLink>
+            <NavLink class="nav-link1" href="users">
+                <MudIcon Icon="@Icons.Material.Filled.Person"/> Utilisateurs
+            </NavLink>
+            <NavLink class="nav-link1" href="valider">
+                <MudBadge Content="@nbAvantagePasValide" Overlap="true" Color="Color.Primary" Class="mx-6 my-4" Style="margin: 0">
+                    <MudIcon Icon="@Icons.Material.Filled.Check"/> Valider
+                </MudBadge>
             </NavLink>
         }
     </div>
@@ -41,26 +52,33 @@
 
     private bool collapseNavMenu = true;
     private bool isAdmin = false;
+    private int nbAvantagePasValide;
+    private string padding = "0";
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    protected override void OnInitialized()
+    protected async override void OnInitialized()
     {
+    
         if (localStorage.GetItem<string>("user_roles") == "Admin")
         {
             isAdmin = true;
-            Console.WriteLine(isAdmin);
         }
+        else
+        {
+            padding = "10px";
+        }
+        nbAvantagePasValide = await Http.GetFromJsonAsync<int>(apiUrl.getUrl() + "nb-avantages-non-valide");
     }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
     }
-    
+
     private void logOut()
     {
         localStorage.Clear();
-        NavManager.NavigateTo("/login");
+        NavManager.NavigateTo("/login", forceLoad: true);
     }
 }

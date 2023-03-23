@@ -1,0 +1,235 @@
+@page "/users"
+@using Blazored.LocalStorage
+@using System.Reflection.Metadata.Ecma335
+@using System.Text.Json.Nodes
+@inject ISyncLocalStorageService localStorage
+@inject NavigationManager NavManager
+@inject Server apiUrl
+
+@if (localStorage.GetItem<string>("user_roles") == "Admin")
+{
+    @inject HttpClient Http
+    <div class="align-items-center">
+        <h3>IndexUsers</h3>
+        <div class="container flex-row d-flex justify-content-around" style="padding: 10px">
+
+            <MudTable Items="_users" Hover="true" T="User" LoadingProgressColor="Color.Info" Style="margin: 10px">
+                <HeaderContent>
+                    <MudTh>ID</MudTh>
+                    <MudTh>Nom</MudTh>
+                    <MudTh>Prénom</MudTh>
+                    <MudTh>Points</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ID">@context.id</MudTd>
+                    <MudTd DataLabel="Nom">@context.nom</MudTd>
+                    <MudTd DataLabel="Prénom">@context.prenom</MudTd>
+                    <MudTd DataLabel="Points">@context.point</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
+                        <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
+                        @if (context.role[0] == "Joueur")
+                        {
+                            <MudButton @onclick="() => getUserAvantages(context.id)" Variant="Variant.Filled" Color="Color.Primary">Voir</MudButton>
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager/>
+                </PagerContent>
+            </MudTable>
+            
+            @if (showAvantages)
+            {
+                <MudTable Items="@_userAvantages" Hover="true" Height="400px" FixedHeader="true" FixedFooter="true">
+                    <HeaderContent>
+                        <MudTh>Libelle</MudTh>
+                        <MudTh>Commentaire</MudTh>
+                        <MudTh>Validé</MudTh>
+                        <MudTh>Points</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Libelle">@context.avantage.libelle</MudTd>
+                        <MudTd DataLabel="Commentaire">@(context.commentaire.Length != 0 ? context.commentaire : "Pas de commentaire")</MudTd>
+                        <MudTd DataLabel="Validé">@(context.isValide ? "Oui" : "Non")</MudTd>
+                        <MudTd DataLabel="Points">@context.points</MudTd>
+                        <MudTd DataLabel="Date">@context.created.Value.Date.ToString("dd/MM/yyyyy")</MudTd>
+                        <MudTd DataLabel="Action" ><MudButton Variant="Variant.Outlined" Color="Color.Error" @onclick="() => OpenDeleteDialog(context)">Suppr</MudButton></MudTd>
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTh></MudTh>
+                        <MudTh></MudTh>
+                        <MudTh><MudButton Variant="Variant.Filled" Color="Color.Success" @onclick="openDialog"> + </MudButton></MudTh>
+                        <MudTh></MudTh>
+                        <MudTh></MudTh>
+                        <MudTh></MudTh>
+                    </FooterContent>
+                </MudTable>
+            } 
+        </div>
+    </div>
+    
+    <MudDialog @bind-IsVisible="isVisible" Options="dialogOptions" Style="height: 500px" >
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                Ajouter
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="UserAvantageCreate" OnValidSubmit="createUserAvantage">
+                <InputSelect class="form-select mb-0" ValueExpression="() => UserAvantageCreate.avantage.id" ValueChanged="@((int value) => SelectedChanged(value))">
+                    @foreach (Avantage avantage in _avantages)
+                    {
+                        <option value="@avantage.id">@avantage.libelle</option>
+                    }
+                </InputSelect>
+                <MudTextField T="string" Label="Commentaire" @bind-Value="UserAvantageCreate.commentaire"/><br/>
+                <MudNumericField T="int" Label="Points" @bind-Value="UserAvantageCreate.points"/><br/>
+                <MudDatePicker Label="Date" @bind-Date="UserAvantageCreate.created" DateFormat="dd/MM/yyyy"/><br/>
+                <MudButton ButtonType="ButtonType.Reset" Variant="Variant.Filled" Color="Color.Error" @onclick="() => isVisible = false"> Annuler </MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"> Ajouter </MudButton>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+    
+    <MudDialog @bind-IsVisible="isDeleteVisible" Options="dialogOptions">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                Voulez vous vraiment supprimer ?
+            </MudText>
+        </TitleContent>
+        <DialogActions>
+            <MudButton OnClick="() => deleteUserAvantage(userAvantageDelete.id)" Variant="Variant.Filled" Color="Color.Info">Oui</MudButton>
+            <MudButton OnClick="() => isDeleteVisible = false" Variant="Variant.Filled" Color="Color.Error">Annuler</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private List<User> _users;
+    private List<UserAvantage> _userAvantages;
+    private List<Avantage> _avantages;
+    private readonly DialogOptions dialogOptions = new() { FullWidth = true };
+    private bool isVisible;
+    private UserAvantage UserAvantageCreate = new UserAvantage();
+    private User selectedUser;
+    private bool isDeleteVisible;
+    private UserAvantage userAvantageDelete;
+
+    private bool showAvantages = false;
+
+    public void openDialog()
+    {
+        this.isVisible = true;
+        UserAvantageCreate.created = DateTime.Today;
+        foreach (Avantage VARIABLE in _avantages)
+        {
+            Console.WriteLine(VARIABLE.libelle);
+        }
+    }
+
+    private void OpenDeleteDialog(UserAvantage userAvantage)
+    {
+        isDeleteVisible = true;
+        userAvantageDelete = userAvantage;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (localStorage.GetItem<string>("user_roles") == "Admin")
+        {
+            _users = await Http.GetFromJsonAsync<List<User>>(apiUrl.getUrl() + "utilisateurs");
+            _avantages = await Http.GetFromJsonAsync<List<Avantage>>(apiUrl.getUrl() + "avantages");
+
+            foreach (User user in _users)
+            {
+                
+                var response = await Http.GetAsync(apiUrl.getUrl() + "get-user-role/" + user.id);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var responseJson = JsonNode.Parse(responseBody);
+
+                if (responseJson["role"][0].GetValue<string>() != "Admin")
+                {
+                    List<UserAvantage> userAvantages = await Http.GetFromJsonAsync<List<UserAvantage>>(apiUrl.getUrl() + "utilisateurs/avantages/" + user.id);
+
+                    foreach (UserAvantage userAvantage in userAvantages)
+                    {
+                        user.point += userAvantage.points;
+                    }
+                }
+
+            }
+        }
+        else
+        {
+            NavManager.NavigateTo("/Unauthorize2");
+        }
+    }
+
+    private void SelectedChanged(int avantageId)
+    {
+        Avantage avantage = _avantages.Find(x => x.id == avantageId);
+        UserAvantageCreate.avantage = avantage;
+        UserAvantageCreate.points = avantage.points;
+    }
+
+    private async void createUserAvantage()
+    {
+        UserAvantageCreate.isValide = true;
+        UserAvantageCreate.user = selectedUser;
+        var response = await Http.PostAsJsonAsync(apiUrl.getUrl() + "utilisateur/" + selectedUser.id + "/avantages/" + UserAvantageCreate.avantage.id, UserAvantageCreate);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = JsonNode.Parse(responseBody);
+
+        UserAvantage lastUserAvantage = new UserAvantage(responseJson["id"].GetValue<int>(), responseJson["commentaire"].GetValue<string>(), responseJson["isValide"].GetValue<bool>(),new DateTime(responseJson["created"].GetValue<long>()) ,responseJson["points"].GetValue<int>());
+        selectedUser.point += lastUserAvantage.points;
+        lastUserAvantage.user = selectedUser;
+        lastUserAvantage.avantage = UserAvantageCreate.avantage;
+        _userAvantages.Add(lastUserAvantage);
+        isVisible = false;
+    }
+
+    private void showEditForm(User user)
+    {
+        //Ouvre modale edit
+    }
+
+    private void OpenDeleteDialog(User user)
+    {
+        //Ouvre modale delete
+    }
+
+    private async void deleteUserAvantage(int idUserAvantage)
+    {
+        try
+        {
+            await Http.DeleteAsync(apiUrl.getUrl() + "delete-userAvantage/" + idUserAvantage);
+            UserAvantage userAvantage1 = _userAvantages.Find(x => x.id == idUserAvantage);
+            var index = _userAvantages.IndexOf(userAvantage1);
+            _userAvantages.RemoveAt(index);
+            User user = _users.Find(x => x.id == userAvantage1.user.id);
+            user.point -= userAvantage1.points;
+        }
+        catch (Exception e)
+        {
+            Console.Write(e);
+            throw;
+        }
+        isDeleteVisible = false;
+    }
+    
+    private async void getUserAvantages(int userId)
+    {
+        if (!showAvantages)
+        {
+            showAvantages = true;
+        }
+        _userAvantages = await Http.GetFromJsonAsync<List<UserAvantage>>(apiUrl.getUrl() + "utilisateurs/avantages/" + userId);
+        selectedUser = _users.Find(x => x.id == userId);
+    }
+
+}

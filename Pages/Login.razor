@@ -1,8 +1,10 @@
 @page "/login"
+@using Blazored.LocalStorage
 @using System.Text.Json.Nodes
 @inject HttpClient Http
-@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject ISyncLocalStorageService localStorage
 @inject NavigationManager NavManager
+@inject Server apiUrl
 
 <h3>Login</h3>
 @if (localStorage.GetItem<string>("token") == null)
@@ -10,7 +12,8 @@
     <div>
         <input type="text" @bind="username" placeholder="Nom d'utilisateur"/>
         <input type="password" @bind="password" placeholder="Mot de passe"/>
-        <input type="submit" @onclick="logIn" content="Se connecter"></div>
+        <input type="submit" @onclick="logIn" content="Se connecter">
+    </div>
 }
 @if (localStorage.GetItem<string>("token") != null)
 {
@@ -24,29 +27,27 @@
 
     private async void logIn()
     {
-        Logs logs = new Logs(username, password);
-        HttpResponseMessage response = await Http.PostAsJsonAsync("https://localhost:8000/api/login_check",logs);
+        var logs = new Logs(username, password);
+        var response = await Http.PostAsJsonAsync(apiUrl.getUrl() + "api/login_check", logs);
 
-        string responseBody = await response.Content.ReadAsStringAsync();
-        var responseJson = JsonObject.Parse(responseBody);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var responseJson = JsonNode.Parse(responseBody);
 
-        localStorage.SetItem("token",responseJson["token"]);
+        localStorage.SetItem("token", responseJson["token"]);
         if (localStorage.GetItem<string>("token") != null)
         {
-            HttpResponseMessage responseUser = await Http.GetAsync("https://localhost:8000/username/" + username);
-            
-            string responseBodyUser = await responseUser.Content.ReadAsStringAsync();
-            var responseJsonUser = JsonObject.Parse(responseBodyUser);
-            
-            localStorage.SetItem("user_id",responseJsonUser["id"]);
-            localStorage.SetItem("user_nom",responseJsonUser["nom"]);
-            localStorage.SetItem("user_prenom",responseJsonUser["prenom"]);
-            localStorage.SetItem("user_roles",responseJsonUser["role"][0]);
+            var responseUser = await Http.GetAsync(apiUrl.getUrl() + "username/" + username);
 
-            NavManager.NavigateTo("/home");
+            var responseBodyUser = await responseUser.Content.ReadAsStringAsync();
+            var responseJsonUser = JsonNode.Parse(responseBodyUser);
+
+            localStorage.SetItem("user_id", responseJsonUser["id"]);
+            localStorage.SetItem("user_nom", responseJsonUser["nom"]);
+            localStorage.SetItem("user_prenom", responseJsonUser["prenom"]);
+            localStorage.SetItem("user_roles", responseJsonUser["role"][0]);
+
+            NavManager.NavigateTo("/home",forceLoad: true);
         }
-
-
     }
 
 

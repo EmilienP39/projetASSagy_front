@@ -1,43 +1,39 @@
 @import 'https://fonts.googleapis.com/css?family=Raleway';
 
-#app{
+#app {
     margin: 0;
 }
 
-.hidden{
+.hidden {
     visibility: hidden;
 }
 
-html, body
-{
+html, body {
     margin: 0;
     scrollbar-width: none;
     overflow-y: scroll;
 }
 
-div.nav-container
-{
+div.nav-container {
     z-index: 1;
     font-family: Raleway;
     margin: 0;
-    padding: 1em 0;
     text-align: center;
     align-items: center;
     /*position: fixed;*/
     width: 100%;
     top: 0;
-    left:0;
+    left: 0;
     display: block;
 }
 
-div.nav-container .nav-right{
+div.nav-container .nav-right {
     position: fixed;
     right: 0;
-    top:0.2em;
+    top: 0.2em;
 }
 
-div.nav-container a
-{
+div.nav-container a {
     color: #FFF;
     text-decoration: none;
     font: 20px Raleway;
@@ -48,14 +44,12 @@ div.nav-container a
     cursor: pointer;
 }
 
-.red
-{
+.red {
     background: #f44336;
     opacity: 1;
 }
 
-div.topBotomBordersIn a:before, div.topBotomBordersIn a:after
-{
+div.topBotomBordersIn a:before, div.topBotomBordersIn a:after {
     position: absolute;
     left: 0;
     width: 100%;
@@ -66,20 +60,17 @@ div.topBotomBordersIn a:before, div.topBotomBordersIn a:after
     transition: all 0.3s;
 }
 
-div.topBotomBordersIn a:before
-{
+div.topBotomBordersIn a:before {
     top: 0;
     transform: translateY(-10px);
 }
 
-div.topBotomBordersIn a:after
-{
+div.topBotomBordersIn a:after {
     bottom: 0;
     transform: translateY(10px);
 }
 
-div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
-{
+div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after {
     opacity: 1;
     transform: translateY(0px);
 }
@@ -206,7 +197,7 @@ div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
     }
 }
 
-.nav-right{
+.nav-right {
     font-family: Gotham, Tahoma, sans-serif;
     font-weight: 900;
     letter-spacing: 1px;
@@ -278,14 +269,14 @@ div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
     visibility: visible;
 }
 
-.wrapper{
+.wrapper {
     position: relative;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 }
 
-.wrapper button{
+.wrapper button {
     display: block;
     width: 200px;
     height: 40px;
@@ -301,12 +292,12 @@ div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
     transition: all .35s;
 }
 
-.wrapper button span{
+.wrapper button span {
     position: relative;
     z-index: 2;
 }
 
-.wrapper button:after{
+.wrapper button:after {
     position: absolute;
     content: "";
     top: 0;
@@ -317,11 +308,11 @@ div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
     transition: all .35s;
 }
 
-.wrapper button:hover{
+.wrapper button:hover {
     color: #fff;
 }
 
-.wrapper button:hover:after{
+.wrapper button:hover:after {
     width: 100%;
 }
 
@@ -357,16 +348,24 @@ div.topBotomBordersIn a:hover:before, div.topBotomBordersIn a:hover:after
     display: block;
 }
 
-.dropdown-content a:hover {background-color: #ddd;}
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
 
-.dropdown:hover .dropdown-content {display: block;}
+.dropdown:hover .dropdown-content {
+    display: block;
+}
 
-.dropdown:hover .dropbtn {background-color: #9a031e;}
+.dropdown:hover .dropbtn {
+    background-color: #9a031e;
+}
 
-.logs{
+.logs {
     display: inline;
     float: right;
-    
+
 }
-  
-  
+
+.margin-nav {
+    margin: 1rem 0 ;
+}

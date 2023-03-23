@@ -1,0 +1,103 @@
+@page "/valider"
+@using Blazored.LocalStorage
+@using System.Net
+@inject ISyncLocalStorageService localStorage
+@inject NavigationManager NavManager
+@inject Server apiUrl
+
+
+
+@if (localStorage.GetItem<string>("user_roles") == "Admin")
+{
+    @inject HttpClient Http
+    <div class="container align-items-center">
+        @if (isVisible)
+        {
+            <div>
+                <h2>Il n'y a aucun avantage à valider</h2>
+            </div>
+        }
+        else
+        {
+            <h3>Valider</h3>
+            <div class="flex-row d-flex justify-content-around" style="padding: 10px">
+                <MudTable Items="@_userAvantages" Hover="true" Height="400px" FixedHeader="true" FixedFooter="true" Style="width: 70%">
+                    <HeaderContent>
+                        <MudTh>Libelle</MudTh>
+                        <MudTh>Commentaire</MudTh>
+                        <MudTh>Validé</MudTh>
+                        <MudTh>Points</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Libelle">@context.avantage.libelle</MudTd>
+                        <MudTd DataLabel="Commentaire">@(context.commentaire.Length != 0 ? context.commentaire : "Pas de commentaire")</MudTd>
+                        <MudTd DataLabel="Validé">@(context.isValide ? "Oui" : "Non")</MudTd>
+                        <MudTd DataLabel="Points">@context.points</MudTd>
+                        <MudTd DataLabel="Date">@context.created.Value.Date.ToString("dd/MM/yyyyy")</MudTd>
+                        <MudTd>
+                            <MudButton OnClick="() => Accept(context.id)"><MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Error"></MudIcon></MudButton>
+                            <MudButton OnClick="() => Accept(context.id)"><MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success"></MudIcon></MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                        <RowEditingTemplate>
+                            <MudTd DataLabel="Nr" >@context.avantage.libelle</MudTd>
+                            <MudTd DataLabel="Sign">
+                                @context.commentaire"
+                            </MudTd>
+                            <MudTd DataLabel="Name">
+                                @context.isValide
+                            </MudTd>
+                            <MudTd DataLabel="Position">
+                                <MudNumericField @bind-Value="@context.points" Required/>
+                            </MudTd>
+                            <MudTd DataLabel="Molar mass">
+                                @context.created.Value.Date.ToString("dd/MM/yyyyy")
+                            </MudTd>
+                        </RowEditingTemplate>
+                </MudTable>
+            </div>
+        }
+        
+        </div>
+}
+
+@code {
+    List<UserAvantage> _userAvantages;
+    bool isVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (localStorage.GetItem<string>("user_roles") == "Admin")
+        {
+            try
+            {
+                _userAvantages = await Http.GetFromJsonAsync<List<UserAvantage>>(apiUrl.getUrl() + "avantages-non-valide");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Pas d'avantage à valider");
+                isVisible = true;
+            }
+        }
+        else
+        {
+            NavManager.NavigateTo("/Unauthorize2");
+        }
+    }
+
+    public async void Accept(int UserAvantageID)
+    {
+        await Http.PutAsJsonAsync(apiUrl.getUrl() + "avantages-accept/" + UserAvantageID, new UserAvantage() { id = UserAvantageID, isValide = true });
+        UserAvantage userAvantage = _userAvantages.Find(x => x.id == UserAvantageID);
+        userAvantage.isValide = true;
+        _userAvantages.Remove(userAvantage);
+    }
+
+    public void Delete(int UserAvantageID)
+    {
+        
+    }
+
+}
