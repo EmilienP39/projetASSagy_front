@@ -36,13 +36,16 @@
             <NavLink class="nav-link1" href="avantages">
                 <MudIcon Icon="@Icons.Material.Filled.Checklist"/> Avantages
             </NavLink>
-            <NavLink class="nav-link1" href="users">
-                <MudIcon Icon="@Icons.Material.Filled.Person"/> Utilisateurs
-            </NavLink>
             <NavLink class="nav-link1" href="valider">
                 <MudBadge Content="@nbAvantagePasValide" Overlap="true" Color="Color.Primary" Class="mx-6 my-4" Style="margin: 0">
                     <MudIcon Icon="@Icons.Material.Filled.Check"/> Valider
                 </MudBadge>
+            </NavLink>
+        }
+        @if (isEduc)
+        {
+            <NavLink class="nav-link1" href="users">
+                <MudIcon Icon="@Icons.Material.Filled.Person"/> Utilisateurs
             </NavLink>
         }
     </div>
@@ -52,6 +55,7 @@
 
     private bool collapseNavMenu = true;
     private bool isAdmin = false;
+    private bool isEduc = false;
     private int nbAvantagePasValide;
     private string padding = "0";
 
@@ -63,6 +67,11 @@
         if (localStorage.GetItem<string>("user_roles") == "Admin")
         {
             isAdmin = true;
+        }
+        if (localStorage.GetItem<string>("user_roles") == "Educateur")
+        {
+            isEduc = true;
+            padding = "10px";
         }
         else
         {

@@ -28,6 +28,7 @@
                 <MudTd DataLabel="Actions">
                     <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
                     <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
+                    <MudButton @onclick="() => move(context.id)" Variant="Variant.Filled" Color="Color.Info"> Voir </MudButton>
                 </MudTd>
             </RowTemplate>
             <PagerContent>

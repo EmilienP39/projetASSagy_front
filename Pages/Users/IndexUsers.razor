@@ -6,7 +6,7 @@
 @inject NavigationManager NavManager
 @inject Server apiUrl
 
-@if (localStorage.GetItem<string>("user_roles") == "Admin")
+@if (localStorage.GetItem<string>("user_roles") == "Admin" || localStorage.GetItem<string>("user_roles") == "Educateur")
 {
     @inject HttpClient Http
     <div class="align-items-center">
@@ -27,8 +27,11 @@
                     <MudTd DataLabel="Prénom">@context.prenom</MudTd>
                     <MudTd DataLabel="Points">@context.point</MudTd>
                     <MudTd DataLabel="Actions">
-                        <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
-                        <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
+                        @if (localStorage.GetItem<string>("user_roles") == "Admin")
+                        {
+                            <MudButton @onclick="() => OpenDeleteDialog(context)" Variant="Variant.Filled" Color="Color.Error">Supprimer</MudButton>
+                            <MudButton @onclick="() => showEditForm(context)" Variant="Variant.Filled" Color="Color.Warning">Modifier</MudButton>
+                        }
                         @if (context.role[0] == "Joueur")
                         {
                             <MudButton @onclick="() => getUserAvantages(context.id)" Variant="Variant.Filled" Color="Color.Primary">Voir</MudButton>
@@ -139,19 +142,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (localStorage.GetItem<string>("user_roles") == "Admin")
+        if (localStorage.GetItem<string>("user_roles") == "Admin" || localStorage.GetItem<string>("user_roles") == "Educateur")
         {
             _users = await Http.GetFromJsonAsync<List<User>>(apiUrl.getUrl() + "utilisateurs");
             _avantages = await Http.GetFromJsonAsync<List<Avantage>>(apiUrl.getUrl() + "avantages");
 
             foreach (User user in _users)
             {
-                
                 var response = await Http.GetAsync(apiUrl.getUrl() + "get-user-role/" + user.id);
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var responseJson = JsonNode.Parse(responseBody);
 
-                if (responseJson["role"][0].GetValue<string>() != "Admin")
+                if (responseJson["role"][0].GetValue<string>() != "Admin" || responseJson["role"][0].GetValue<string>() != "Educateur")
                 {
                     List<UserAvantage> userAvantages = await Http.GetFromJsonAsync<List<UserAvantage>>(apiUrl.getUrl() + "utilisateurs/avantages/" + user.id);
 
@@ -160,7 +162,6 @@
                         user.point += userAvantage.points;
                     }
                 }
-
             }
         }
         else
